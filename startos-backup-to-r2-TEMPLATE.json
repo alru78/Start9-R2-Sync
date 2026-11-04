@@ -7,136 +7,136 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 9 * * 1"
+              "expression": "0 8 * * 1"
             }
           ]
         }
       },
-      "id": "schedule-trigger",
-      "name": "Weekly Trigger (Mon 09:00 Europe/Berlin)",
+      "id": "d0fcfd64-da42-41ae-b41f-dab0b158b70e",
+      "name": "Weekly Trigger (Mon 08:00 Europe/Berlin)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        180,
-        340
+        -1920,
+        288
       ]
     },
     {
       "parameters": {
-        "resource": "command",
-        "command": "mountpoint -q /mnt/backup-sync || sudo /usr/bin/mount -o ro UUID=REPLACE_WITH_DISK_UUID_HOST_A /mnt/backup-sync"
+        "authentication": "privateKey",
+        "command": "sudo mkdir -p /mnt/backup-sync; mountpoint -q /mnt/backup-sync || sudo /usr/bin/mount -o ro UUID=REPLACE_WITH_DISK_UUID_HOST_A /mnt/backup-sync"
       },
-      "id": "mount-host-a",
+      "id": "54e3ed8d-f21c-46a8-86a0-58faf793851e",
       "name": "Mount: host-a",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        420,
-        140
+        -1680,
+        80
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_1",
           "name": "SSH: host-a"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
-        "command": "docker run -d --name rclone-host-a --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest sync host-a-sftp:/mnt/backup-sync/StartOSBackupsV2 r2:REPLACE_WITH_YOUR_R2_BUCKET/HostA/StartOSBackupsV2 --transfers=8 --checkers=16 --fast-list --use-json-log --stats-one-line -v"
+        "authentication": "privateKey",
+        "command": "docker pull -q rclone/rclone:latest >/dev/null 2>&1 || true; docker run -d --name rclone-host-a --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest sync host-a-sftp:/mnt/backup-sync/StartOSBackupsV2 r2:REPLACE_WITH_YOUR_R2_BUCKET/HostA/StartOSBackupsV2 --transfers=8 --checkers=16 --fast-list --use-json-log --stats-one-line -v"
       },
-      "id": "start-host-a",
+      "id": "4463943a-bb6d-4f44-a441-aa89f6a10fdd",
       "name": "Start sync: host-a",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        660,
-        140
+        -1440,
+        80
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "docker wait rclone-host-a; CODE=$?; docker logs rclone-host-a 2>&1; docker rm rclone-host-a >/dev/null 2>&1; exit $CODE"
       },
-      "id": "wait-host-a",
+      "id": "16b3f785-e7ed-4ee0-8f60-4b7d7021c621",
       "name": "Wait for sync: host-a",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        900,
-        140
+        -1200,
+        80
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "sudo /usr/bin/umount /mnt/backup-sync"
       },
-      "id": "umount-host-a",
+      "id": "7517bb99-a14b-42f7-ad61-d9344a739a11",
       "name": "Unmount: host-a",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        1140,
-        140
+        -960,
+        80
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_1",
           "name": "SSH: host-a"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "docker run --rm --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest size r2:REPLACE_WITH_YOUR_R2_BUCKET/HostA/StartOSBackupsV2 --json"
       },
-      "id": "size-host-a",
+      "id": "e943f366-24d2-48b1-879e-c26ffbeb1625",
       "name": "Check Size: host-a",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        1380,
-        140
+        -720,
+        80
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
         "jsCode": "const mount = $('Mount: host-a').first().json;\nconst startSync = $('Start sync: host-a').first().json;\nconst rclone = $('Wait for sync: host-a').first().json;\nconst umount = $('Unmount: host-a').first().json;\nconst sizeCheck = $('Check Size: host-a').first().json;\n\nfunction ok(item) {\n  if (item === undefined || item === null) return false;\n  if (item.code !== undefined) return item.code === 0;\n  if (item.exitCode !== undefined) return item.exitCode === 0;\n  return !item.error;\n}\n\nfunction formatBytes(bytes) {\n  if (bytes === undefined || bytes === null || isNaN(bytes)) return 'unknown';\n  const units = ['B', 'KB', 'MB', 'GB', 'TB'];\n  let i = 0, n = bytes;\n  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }\n  return n.toFixed(2) + ' ' + units[i];\n}\n\nfunction extractUploadedBytes(stdout) {\n  if (!stdout) return undefined;\n  const lines = stdout.split('\\n').filter(l => l.trim().length > 0);\n  let lastBytes = undefined;\n  for (const line of lines) {\n    try {\n      const parsed = JSON.parse(line);\n      if (parsed && parsed.stats && typeof parsed.stats.bytes === 'number') {\n        lastBytes = parsed.stats.bytes;\n      }\n    } catch (e) { /* skip non-JSON lines */ }\n  }\n  return lastBytes;\n}\n\nlet status = 'success';\nlet error = '';\n\nif (!ok(mount)) {\n  status = 'failed';\n  error = 'Mount failed: ' + (mount.stderr || mount.error || JSON.stringify(mount));\n} else if (!ok(rclone)) {\n  status = 'failed';\n  error = 'rclone sync failed: ' + (rclone.stderr || rclone.error || JSON.stringify(rclone));\n}\nconst umountWarning = !ok(umount) ? ('Warning - umount failed: ' + (umount.stderr || umount.error || '')) : '';\n\nlet uploadedHuman = 'unknown';\ntry { uploadedHuman = formatBytes(extractUploadedBytes(rclone.stdout)); } catch (e) {}\n\nlet sizeHuman = 'unknown';\ntry { sizeHuman = formatBytes(JSON.parse(sizeCheck.stdout).bytes); } catch (e) {}\n\nreturn [{ json: { host: 'host-a', status, error, umountWarning, uploadedHuman, sizeHuman } }];"
       },
-      "id": "combine-host-a",
+      "id": "c3ce10b8-ebac-4b44-9939-a5eece3e567a",
       "name": "Combine Result: host-a",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1620,
-        140
+        -480,
+        80
       ]
     },
     {
@@ -145,7 +145,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -162,29 +163,30 @@
         },
         "options": {}
       },
-      "id": "if-host-a",
+      "id": "beb4f400-0e09-43e9-914a-8232828902d2",
       "name": "IF: host-a succeeded?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1860,
-        140
+        -240,
+        80
       ]
     },
     {
       "parameters": {
         "chatId": "REPLACE_WITH_YOUR_TELEGRAM_CHAT_ID",
-        "text": "=\u2705 Backup OK: {{ $json.host }} \u2014 uploaded {{ $json.uploadedHuman }}, {{ $json.sizeHuman }} total in R2.{{ $json.umountWarning ? '\\n\u26a0\ufe0f ' + $json.umountWarning : '' }}",
+        "text": "=✅ StartOS backup OK: {{ $json.host }} — uploaded {{ $json.uploadedHuman }}, {{ $json.sizeHuman }} total in R2.{{ $json.umountWarning ? '\\n⚠️ ' + $json.umountWarning : '' }}",
         "additionalFields": {}
       },
-      "id": "notify-ok-host-a",
+      "id": "bb8e2e1f-28a2-4c99-927b-3ac8dcf30931",
       "name": "Notify: host-a OK",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2100,
-        60
+        0,
+        0
       ],
+      "webhookId": "648931d5-f6e3-4c4a-990d-7abbbc3c1193",
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_ME_TG",
@@ -195,17 +197,18 @@
     {
       "parameters": {
         "chatId": "REPLACE_WITH_YOUR_TELEGRAM_CHAT_ID",
-        "text": "=\ud83d\udea8 Backup FAILED: {{ $json.host }}\n{{ $json.error }}\nCurrent total in R2: {{ $json.sizeHuman }}",
+        "text": "=🚨 StartOS backup FAILED: {{ $json.host }}\n{{ $json.error }}\nCurrent total in R2: {{ $json.sizeHuman }}",
         "additionalFields": {}
       },
-      "id": "alert-fail-host-a",
+      "id": "915a5b4b-2d11-4920-bcfb-d30d1f982a7c",
       "name": "ALERT: host-a FAILED",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2100,
-        220
+        0,
+        160
       ],
+      "webhookId": "6d523971-518e-4f25-97b6-14c52de3a5ee",
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_ME_TG",
@@ -215,120 +218,120 @@
     },
     {
       "parameters": {
-        "resource": "command",
-        "command": "mountpoint -q /mnt/backup-sync || sudo /usr/bin/mount -o ro UUID=REPLACE_WITH_DISK_UUID_HOST_B /mnt/backup-sync"
+        "authentication": "privateKey",
+        "command": "sudo mkdir -p /mnt/backup-sync; mountpoint -q /mnt/backup-sync || sudo /usr/bin/mount -o ro UUID=REPLACE_WITH_DISK_UUID_HOST_B /mnt/backup-sync"
       },
-      "id": "mount-host-b",
+      "id": "a6b28a14-2512-4caf-bf0c-522c11be3c5c",
       "name": "Mount: host-b",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        420,
-        560
+        -1680,
+        512
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_2",
           "name": "SSH: host-b"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
-        "command": "docker run -d --name rclone-host-b --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest sync host-b-sftp:/mnt/backup-sync/StartOSBackupsV2 r2:REPLACE_WITH_YOUR_R2_BUCKET/HostB/StartOSBackupsV2 --transfers=8 --checkers=16 --fast-list --use-json-log --stats-one-line -v"
+        "authentication": "privateKey",
+        "command": "docker pull -q rclone/rclone:latest >/dev/null 2>&1 || true; docker run -d --name rclone-host-b --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest sync host-b-sftp:/mnt/backup-sync/StartOSBackupsV2 r2:REPLACE_WITH_YOUR_R2_BUCKET/HostB/StartOSBackupsV2 --transfers=8 --checkers=16 --fast-list --use-json-log --stats-one-line -v"
       },
-      "id": "start-host-b",
+      "id": "a0ed2f3f-3a21-4038-96ab-8c529c73743d",
       "name": "Start sync: host-b",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        660,
-        560
+        -1440,
+        512
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "docker wait rclone-host-b; CODE=$?; docker logs rclone-host-b 2>&1; docker rm rclone-host-b >/dev/null 2>&1; exit $CODE"
       },
-      "id": "wait-host-b",
+      "id": "b8a41790-21de-459d-80c7-483324d144c9",
       "name": "Wait for sync: host-b",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        900,
-        560
+        -1200,
+        512
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "sudo /usr/bin/umount /mnt/backup-sync"
       },
-      "id": "umount-host-b",
+      "id": "eb4b4838-a1e2-4400-98bd-97ec8121de99",
       "name": "Unmount: host-b",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        1140,
-        560
+        -960,
+        512
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_2",
           "name": "SSH: host-b"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "resource": "command",
+        "authentication": "privateKey",
         "command": "docker run --rm --env-file /opt/rclone/.env -v /opt/rclone:/config/rclone rclone/rclone:latest size r2:REPLACE_WITH_YOUR_R2_BUCKET/HostB/StartOSBackupsV2 --json"
       },
-      "id": "size-host-b",
+      "id": "0baea33d-8837-4e92-b10a-30bd2bc28a06",
       "name": "Check Size: host-b",
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        1380,
-        560
+        -720,
+        512
       ],
-      "continueOnFail": true,
       "credentials": {
         "sshPrivateKey": {
           "id": "REPLACE_ME_3",
           "name": "SSH: docker host (rclone runner)"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
         "jsCode": "const mount = $('Mount: host-b').first().json;\nconst startSync = $('Start sync: host-b').first().json;\nconst rclone = $('Wait for sync: host-b').first().json;\nconst umount = $('Unmount: host-b').first().json;\nconst sizeCheck = $('Check Size: host-b').first().json;\n\nfunction ok(item) {\n  if (item === undefined || item === null) return false;\n  if (item.code !== undefined) return item.code === 0;\n  if (item.exitCode !== undefined) return item.exitCode === 0;\n  return !item.error;\n}\n\nfunction formatBytes(bytes) {\n  if (bytes === undefined || bytes === null || isNaN(bytes)) return 'unknown';\n  const units = ['B', 'KB', 'MB', 'GB', 'TB'];\n  let i = 0, n = bytes;\n  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }\n  return n.toFixed(2) + ' ' + units[i];\n}\n\nfunction extractUploadedBytes(stdout) {\n  if (!stdout) return undefined;\n  const lines = stdout.split('\\n').filter(l => l.trim().length > 0);\n  let lastBytes = undefined;\n  for (const line of lines) {\n    try {\n      const parsed = JSON.parse(line);\n      if (parsed && parsed.stats && typeof parsed.stats.bytes === 'number') {\n        lastBytes = parsed.stats.bytes;\n      }\n    } catch (e) { /* skip non-JSON lines */ }\n  }\n  return lastBytes;\n}\n\nlet status = 'success';\nlet error = '';\n\nif (!ok(mount)) {\n  status = 'failed';\n  error = 'Mount failed: ' + (mount.stderr || mount.error || JSON.stringify(mount));\n} else if (!ok(rclone)) {\n  status = 'failed';\n  error = 'rclone sync failed: ' + (rclone.stderr || rclone.error || JSON.stringify(rclone));\n}\nconst umountWarning = !ok(umount) ? ('Warning - umount failed: ' + (umount.stderr || umount.error || '')) : '';\n\nlet uploadedHuman = 'unknown';\ntry { uploadedHuman = formatBytes(extractUploadedBytes(rclone.stdout)); } catch (e) {}\n\nlet sizeHuman = 'unknown';\ntry { sizeHuman = formatBytes(JSON.parse(sizeCheck.stdout).bytes); } catch (e) {}\n\nreturn [{ json: { host: 'host-b', status, error, umountWarning, uploadedHuman, sizeHuman } }];"
       },
-      "id": "combine-host-b",
+      "id": "c4c79218-b109-4330-9723-0551f79e6187",
       "name": "Combine Result: host-b",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1620,
-        560
+        -480,
+        512
       ]
     },
     {
@@ -337,7 +340,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -354,29 +358,30 @@
         },
         "options": {}
       },
-      "id": "if-host-b",
+      "id": "0c6b4190-5d87-4081-933e-a1dc17706d13",
       "name": "IF: host-b succeeded?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1860,
-        560
+        -240,
+        512
       ]
     },
     {
       "parameters": {
         "chatId": "REPLACE_WITH_YOUR_TELEGRAM_CHAT_ID",
-        "text": "=\u2705 Backup OK: {{ $json.host }} \u2014 uploaded {{ $json.uploadedHuman }}, {{ $json.sizeHuman }} total in R2.{{ $json.umountWarning ? '\\n\u26a0\ufe0f ' + $json.umountWarning : '' }}",
+        "text": "=✅ StartOS backup OK: {{ $json.host }} — uploaded {{ $json.uploadedHuman }}, {{ $json.sizeHuman }} total in R2.{{ $json.umountWarning ? '\\n⚠️ ' + $json.umountWarning : '' }}",
         "additionalFields": {}
       },
-      "id": "notify-ok-host-b",
+      "id": "1b0bb484-ed46-41c1-b979-7646e36f8541",
       "name": "Notify: host-b OK",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2100,
-        480
+        0,
+        432
       ],
+      "webhookId": "134e3403-53fe-4dbc-b7fc-07c8e89b1a50",
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_ME_TG",
@@ -387,17 +392,18 @@
     {
       "parameters": {
         "chatId": "REPLACE_WITH_YOUR_TELEGRAM_CHAT_ID",
-        "text": "=\ud83d\udea8 Backup FAILED: {{ $json.host }}\n{{ $json.error }}\nCurrent total in R2: {{ $json.sizeHuman }}",
+        "text": "=🚨 StartOS backup FAILED: {{ $json.host }}\n{{ $json.error }}\nCurrent total in R2: {{ $json.sizeHuman }}",
         "additionalFields": {}
       },
-      "id": "alert-fail-host-b",
+      "id": "11b4c5e0-7135-4fd3-8354-2c68c5b8bd5f",
       "name": "ALERT: host-b FAILED",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2100,
-        640
+        0,
+        592
       ],
+      "webhookId": "824fc82b-9108-4998-ac6a-c205327ceead",
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_ME_TG",
@@ -575,7 +581,7 @@
         ]
       ]
     },
-    "Weekly Trigger (Mon 09:00 Europe/Berlin)": {
+    "Weekly Trigger (Mon 08:00 Europe/Berlin)": {
       "main": [
         [
           {
@@ -595,5 +601,11 @@
   "pinData": {},
   "meta": {
     "instanceId": "backup-to-r2-template"
+  },
+  "active": false,
+  "tags": [],
+  "settings": {
+    "binaryMode": "separate",
+    "executionOrder": "v1"
   }
 }

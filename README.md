@@ -9,10 +9,12 @@ in R2) and on failure.
 
 For each host:
 
-1. **Mount** — SSHes into the *source* host and mounts its local backup
-   drive read-only by UUID at `/mnt/backup-sync` (idempotent: skips if
-   already mounted, so a re-run never double-mounts).
-2. **Start sync** — SSHes into the *Docker host* and launches a detached
+1. **Mount** — SSHes into the *source* host, creates `/mnt/backup-sync` if
+   it's missing and mounts its local
+   backup drive read-only by UUID there (idempotent: skips if already
+   mounted, so a re-run never double-mounts).
+2. **Start sync** — SSHes into the *Docker host*, pulls the latest
+   `rclone/rclone` image, and launches a detached
    (`docker run -d`) rclone container that syncs the source host's
    `/mnt/backup-sync/...` folder (read over SFTP) to an R2 bucket. Detached
    on purpose: once launched, nothing stays attached to the container, so
